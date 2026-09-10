@@ -33,7 +33,7 @@ Assignments 3 and 4 **call** `cs509::adjacency_list_to_csr()` from `common/`; th
 
 ## Build
 
-Requires `g++` (7+) or `clang++` with C++17 and GNU make.
+Requires `g++` (7+) or `clang++` with C++17 and GNU make. See [OPERATING_INSTRUCTIONS.md](OPERATING_INSTRUCTIONS.md) for full step-by-step instructions.
 
 ```bash
 make            # bin/cs509 (wrapper) and bin/gen_* (generators)
@@ -146,12 +146,6 @@ The script runs every input through `bin/cs509`. It fills the "expected" columns
 - **PageRank example** (A4 §6.2): the header says E = 4 but 5 arcs are listed. The printed sample ranks cannot come from the stated formula, because vertex 3 has no in-links, so its rank must be (1−d)/N = 0.0375. This implementation converges to ≈ 0.2019, 0.3736, 0.3869, 0.0375 (sum 1).
 - **FastMap example** (A4 §8.3): the sample coordinates are illustrative and do not follow from the law-of-cosines projection. For example, with pivots 1 and 3, object 0 projects to (3² + 6² − 5²)/(2·6) = 1.6667. The spec itself notes that results differ with pivot choice.
 
-## Exam-day checklist
+## Operating instructions
 
-```bash
-git clone git@github.com:chayonmollick/CS509_CSM10144.git && cd CS509_CSM10144
-make -j4
-bin/cs509 mst tests/assignment3/examples/mst_example.txt
-scripts/generate_tests.sh --large          # only if fm_04 is needed
-tar -czvf CS509_CSM10144.tgz CS509_CSM10144   # run from the parent directory
-```
+Step-by-step instructions for a Linux (Ubuntu) machine — cloning, building with or without `make`, the menu and command-line modes, expected results for the examples, regenerating inputs, adding an algorithm, packaging and troubleshooting — are in [OPERATING_INSTRUCTIONS.md](OPERATING_INSTRUCTIONS.md).
