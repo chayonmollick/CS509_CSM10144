@@ -1,0 +1,14 @@
+build/
+bin/
+*.o
+*.d
+.DS_Store
+
+# Too large for git (~700 MB); regenerate with: scripts/generate_tests.sh --large
+tests/assignment4/fm_04.txt
+tests/assignment4/fm_05.txt
+# Optional 100,000-vertex inputs; regenerate with: scripts/generate_tests.sh --optional
+tests/assignment3/maxflow_100000.txt
+tests/assignment4/pagerank_100000.txt
+
+reports/raw/
