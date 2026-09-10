@@ -4,7 +4,7 @@ bin/
 *.d
 .DS_Store
 
-# Too large for git (~700 MB); regenerate with: scripts/generate_tests.sh --large
+# Too large for git (~575 MB); regenerate with: scripts/generate_tests.sh --large
 tests/assignment4/fm_04.txt
 tests/assignment4/fm_05.txt
 # Optional 100,000-vertex inputs; regenerate with: scripts/generate_tests.sh --optional

@@ -170,11 +170,11 @@ def gd_rows():
         if status != 0:
             rows.append([base, params["DEGREE"][0], "-", "-", "-", "-", x_star, 0, "-", "-", "-", failure(status, err)])
             continue
-        x, fx = float(field(out, "Final x")), float(field(out, "Final f(x)"))
+        x_text, fx_text = field(out, "Final x"), field(out, "Final f(x)")
         converged = field(out, "Converged") == "true"
-        ok = converged and abs(x - x_star) <= 1e-4 and abs(fx) <= 1e-6
+        ok = converged and abs(float(x_text) - x_star) <= 1e-4 and abs(float(fx_text)) <= 1e-6
         rows.append([base, field(out, "Degree"), params["INITIAL_X"][0], params["LEARNING_RATE"][0], params["TOLERANCE"][0],
-                     params["MAX_ITERATIONS"][0], "%g" % x_star, 0, "%.10f" % x, "%.3e" % fx,
+                     params["MAX_ITERATIONS"][0], "%g" % x_star, 0, x_text, fx_text,
                      "%s / %s" % (field(out, "Iterations"), fmt_ms(times_ms(out)[0])), "Pass" if ok else "Fail"])
     return table(["File", "Degree", "x0", "Rate", "Tol.", "Max Iter.", "Exp. x*", "Exp. f(x*)", "Actual x", "Actual f(x)",
                   "Iter. / Time", "Status"], rows) + missing_note(A3, names)
@@ -319,7 +319,10 @@ def main():
             f.write("## 2. PageRank\n\nUnweighted directed graphs (CSR). Exp. Top = independent Python power "
                     "iteration (tools/verify_pagerank.py).\n\n" + pagerank_rows(check) + "\n\n")
             f.write("## 3. K-Means Clustering\n\nExp. WCSS = independent Python Lloyd's algorithm "
-                    "(tools/verify_kmeans.py).\n\n" + kmeans_rows(check) + "\n\n")
+                    "(tools/verify_kmeans.py). Centroids are initialized with the first K points, as the "
+                    "assignment recommends; on km_03 and km_04 this converges to a local optimum (some blobs "
+                    "are split, others merged), so WCSS is higher than the best possible clustering.\n\n"
+                    + kmeans_rows(check) + "\n\n")
             f.write("## 4. FastMap\n\nPivot selection: random start object (seed 1), then 2 rounds of "
                     "farthest-object search per dimension. Avg. distance error = mean |d(i,j) - ||x_i - x_j|| | "
                     "over all pairs.\n\n" + fastmap_rows() + "\n")

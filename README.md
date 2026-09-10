@@ -117,7 +117,7 @@ All generated inputs are reproducible: `scripts/generate_tests.sh` rebuilds them
 
 ```bash
 scripts/generate_tests.sh              # every required input except fm_04
-scripts/generate_tests.sh --large      # + fm_04.txt (N = 10,000, ~700 MB, not committed)
+scripts/generate_tests.sh --large      # + fm_04.txt (N = 10,000, ~575 MB, not committed)
 scripts/generate_tests.sh --optional   # + maxflow_100000.txt, pagerank_100000.txt
 ```
 
