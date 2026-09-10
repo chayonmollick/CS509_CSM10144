@@ -304,7 +304,223 @@ Variations:
 | Coloring visits the smallest degree first | `assignment4/src/coloring.cpp` | replace `max_degree - degree` with `degree` in both counting-sort lines |
 | Report an extra number (e.g. iterations, augmenting paths) | algorithm header + `.cpp` + runner | add a field to the result struct, update it in the algorithm, print it in the runner |
 
-## 7. Useful snippets
+## 7. Three more worked examples
+
+These cover the three common kinds of task: changing only the output, adding an input parameter, and adding a new algorithm. Each was built and run; the outputs shown are real.
+
+### 7.1 Change only the output: top 5 PageRank vertices
+
+Task: "PageRank: also print the top 5 vertices."
+
+In `assignment4/src/runners.cpp`, function `run_pagerank`, add this right after the line `std::printf("Top vertex: %d (rank %.6f)\n", top, ranks[top]);`:
+
+```cpp
+  // Top 5 vertices by rank (printing only, so it stays outside the timed call).
+  std::vector<int> order(graph.num_vertices);
+  for (int v = 0; v < graph.num_vertices; ++v) order[v] = v;
+  const int shown = std::min(5, graph.num_vertices);
+  std::partial_sort(order.begin(), order.begin() + shown, order.end(),
+                    [&](int a, int b) { return ranks[a] > ranks[b]; });
+  std::printf("Top %d vertices:\n", shown);
+  for (int i = 0; i < shown; ++i) std::printf("  %d. vertex %d (rank %.6f)\n", i + 1, order[i], ranks[order[i]]);
+```
+
+```bash
+make
+bin/cs509 pagerank tests/assignment4/pagerank_50000.txt --quiet
+```
+
+```
+Top vertex: 21369 (rank 0.001321)
+Top 5 vertices:
+  1. vertex 21369 (rank 0.001321)
+  2. vertex 46333 (rank 0.000525)
+  3. vertex 38949 (rank 0.000416)
+  4. vertex 4846 (rank 0.000416)
+  5. vertex 2781 (rank 0.000366)
+```
+
+### 7.2 New input parameter: Gradient Descent with momentum
+
+Task: "Read `MOMENTUM β` (0 ≤ β < 1) from the input file and update v = β·v + f′(x), x = x − α·v."
+
+1. `assignment3/include/a3/gradient_descent.hpp`, in `struct GradientDescentProblem`, after `long long max_iterations = 0;`:
+
+   ```cpp
+   double momentum = 0.0;  // beta in [0, 1); 0 gives plain gradient descent
+   ```
+
+2. `assignment3/src/inputs.cpp`, function `read_gradient_descent_problem`. Add a keyword branch after the `MAX_ITERATIONS` branch, before `} else {`:
+
+   ```cpp
+       } else if (keyword == "MOMENTUM") {
+         problem.momentum = in.read_double("MOMENTUM");
+   ```
+
+   and the validation just before `return problem;`:
+
+   ```cpp
+     if (problem.momentum < 0.0 || problem.momentum >= 1.0) {
+       in.fail_file("MOMENTUM must be in [0, 1), found " + format_number(problem.momentum));
+     }
+   ```
+
+3. `assignment3/src/gradient_descent.cpp`, the update loop:
+
+   ```diff
+   +  double velocity = 0.0;
+      while (std::fabs(gradient) > problem.tolerance && iterations < problem.max_iterations) {
+   -    x -= problem.learning_rate * gradient;
+   +    velocity = problem.momentum * velocity + gradient;
+   +    x -= problem.learning_rate * velocity;
+   ```
+
+4. `assignment3/src/runners.cpp`, function `run_gradient_descent`, after the `Degree` line:
+
+   ```cpp
+   std::printf("Momentum: %g\n", problem.momentum);
+   ```
+
+Build and test:
+
+```bash
+make
+cp tests/assignment3/gd_05.txt tests/assignment3/gd_05_momentum.txt
+echo "MOMENTUM 0.9" >> tests/assignment3/gd_05_momentum.txt
+bin/cs509 gd tests/assignment3/gd_05.txt            # Momentum: 0    Iterations: 2364  Converged: true
+bin/cs509 gd tests/assignment3/gd_05_momentum.txt   # Momentum: 0.9  Iterations: 427   Converged: true
+```
+
+A file with `MOMENTUM 1.5` prints `Error: ...: MOMENTUM must be in [0, 1), found 1.5` (exit status 1). Files without a `MOMENTUM` line behave as before (momentum 0).
+
+### 7.3 New algorithm: connected components
+
+Task: "Count the connected components of an undirected graph and print the size of the largest one."
+
+1. New file `assignment4/include/a4/components.hpp`:
+
+   ```cpp
+   // Connected components of an undirected CSR graph.
+   #pragma once
+
+   #include <vector>
+
+   #include "cs509/csr.hpp"
+
+   namespace a4 {
+
+   struct ComponentsResult {
+     std::vector<int> component;  // component id of every vertex
+     int count = 0;
+     int largest = 0;  // number of vertices in the biggest component
+   };
+
+   ComponentsResult connected_components(const cs509::CSRGraph& graph);
+
+   }  // namespace a4
+   ```
+
+2. New file `assignment4/src/components.cpp`:
+
+   ```cpp
+   #include "a4/components.hpp"
+
+   #include <algorithm>
+   #include <cstddef>
+
+   namespace a4 {
+
+   // A BFS from every vertex that has no component yet; each BFS labels one whole component.
+   ComponentsResult connected_components(const cs509::CSRGraph& graph) {
+     const int n = graph.num_vertices;
+     ComponentsResult result;
+     result.component.assign(static_cast<std::size_t>(n), -1);
+     std::vector<int> queue(static_cast<std::size_t>(n));
+     for (int start = 0; start < n; ++start) {
+       if (result.component[start] >= 0) continue;
+       int head = 0;
+       int tail = 0;
+       queue[tail++] = start;
+       result.component[start] = result.count;
+       while (head < tail) {
+         const int u = queue[head++];
+         for (long long k = graph.row_ptr[u]; k < graph.row_ptr[u + 1]; ++k) {
+           const int v = graph.col_idx[k];
+           if (result.component[v] < 0) {
+             result.component[v] = result.count;
+             queue[tail++] = v;
+           }
+         }
+       }
+       result.largest = std::max(result.largest, tail);
+       ++result.count;
+     }
+     return result;
+   }
+
+   }  // namespace a4
+   ```
+
+3. `assignment4/src/runners.cpp`: add `#include "a4/components.hpp"` with the other includes, and just before the last line `}  // namespace a4`:
+
+   ```cpp
+   int run_components(const cs509::RunOptions& options) {
+     // Same input format as vertex coloring, so reuse its reader (validation included).
+     const cs509::CSRGraph graph = cs509::adjacency_list_to_csr(read_coloring_input(options.input_path));
+
+     double average_ms = 0.0;
+     const ComponentsResult result =
+         cs509::run_timed(options.runs, average_ms, [&] { return connected_components(graph); });
+
+     std::printf("Input: %s (V = %d, E = %lld)\n", options.input_path.c_str(), graph.num_vertices, graph.num_edges);
+     std::printf("Algorithm: Connected Components\n");
+     print_listing_title("Vertex components", options.quiet, graph.num_vertices, "vertices");
+     if (!options.quiet) {
+       for (int v = 0; v < graph.num_vertices; ++v) std::printf("%d %d\n", v, result.component[v]);
+     }
+     std::printf("Components: %d\n", result.count);
+     std::printf("Largest component: %d vertices\n", result.largest);
+     cs509::print_execution_time(average_ms, options.runs);
+     return 0;
+   }
+   ```
+
+4. `assignment4/include/a4/runners.hpp`:
+
+   ```cpp
+   int run_components(const cs509::RunOptions& options);
+   ```
+
+5. `driver/main.cpp`, table `kAlgorithms`, after the `fastmap` line:
+
+   ```cpp
+       {"components", "A4", "Connected components", a4::run_components},
+   ```
+
+Build and test (the small graph has the components {0,1,2}, {3,4} and {5}):
+
+```bash
+make
+printf '6 3\n0 1 1\n1 2 0 2\n2 1 1\n3 1 4\n4 1 3\n5 0\n' > tests/assignment4/components_example.txt
+bin/cs509 components tests/assignment4/components_example.txt
+bin/cs509 components tests/assignment4/color_100000.txt --quiet
+```
+
+```
+Vertex components:
+0 0
+1 0
+2 0
+3 1
+4 1
+5 2
+Components: 3
+Largest component: 3 vertices
+```
+
+For `color_100000.txt`: `Components: 263`, `Largest component: 99734 vertices`.
+
+## 8. Useful snippets
 
 Reverse (transpose) a directed CSR graph, for algorithms that need incoming edges (e.g. strongly connected components). Put it in your `.cpp` inside `namespace { ... }` and add `#include <algorithm>` and `#include <vector>`:
 
@@ -342,7 +558,7 @@ Debug output that does not mix with the results (remove it afterwards):
 std::fprintf(stderr, "debug: u=%d v=%d\n", u, v);
 ```
 
-## 8. When something goes wrong
+## 9. When something goes wrong
 
 | Message | Usual cause | Fix |
 |---|---|---|
@@ -356,7 +572,7 @@ std::fprintf(stderr, "debug: u=%d v=%d\n", u, v);
 | a change has no effect | file not saved, or `make` not run | save, `make`, run `bin/cs509` from the repository root |
 | strange errors after many edits | stale build files | `make clean && make` |
 
-## 9. Before submitting
+## 10. Before submitting
 
 ```bash
 make clean && make                                         # clean build without errors
