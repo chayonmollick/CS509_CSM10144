@@ -177,6 +177,8 @@ The input formats are exactly those in the Assignment 3 and 4 specifications. `t
 
 ## 8. Adding a new algorithm
 
+[MODIFICATION_GUIDE.md](MODIFICATION_GUIDE.md) has the full details: where each part lives, a complete worked example (BFS), adding a command-line option, small changes to the existing algorithms, and fixes for common build errors. In short:
+
 1. Put the algorithm in a new file, e.g. `assignment4/src/my_algorithm.cpp`, with a header in `assignment4/include/a4/`. The Makefile compiles every `.cpp` in `src/` automatically.
 2. Add a runner in `assignment4/src/runners.cpp` and declare it in `assignment4/include/a4/runners.hpp`:
 

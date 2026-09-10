@@ -149,3 +149,5 @@ The script runs every input through `bin/cs509`. It fills the "expected" columns
 ## Operating instructions
 
 Step-by-step instructions for a Linux (Ubuntu) machine — cloning, building with or without `make`, the menu and command-line modes, expected results for the examples, regenerating inputs, adding an algorithm, packaging and troubleshooting — are in [OPERATING_INSTRUCTIONS.md](OPERATING_INSTRUCTIONS.md).
+
+How to modify the project for a new task (where each part lives, a worked example of adding an algorithm, common build errors) is in [MODIFICATION_GUIDE.md](MODIFICATION_GUIDE.md).
